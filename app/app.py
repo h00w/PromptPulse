@@ -12,10 +12,11 @@ if str(ROOT) not in sys.path:
 import pandas as pd
 import streamlit as st
 
-from promptpulse.config import DEFAULT_MODEL, FALLBACK_MODELS, PULSE_PASS_THRESHOLD
+from promptpulse.config import DEFAULT_MODEL, PULSE_PASS_THRESHOLD
 from promptpulse.data import load_dataset
 from promptpulse.evaluation import evaluate_response
 from promptpulse.inference import (
+    FALLBACK_MODELS,
     GenerationConfig,
     generate_response_with_fallback,
     get_hf_token,
