@@ -19,9 +19,6 @@ from promptpulse.config import DEFAULT_MODEL, DEFAULT_PROVIDER, PULSE_PASS_THRES
 from promptpulse.data import load_dataset
 from promptpulse.evaluation import evaluate_response
 
-# Keep the deployed Streamlit entrypoint self-contained. This intentionally avoids
-# importing runtime symbols from promptpulse.inference so Community Cloud cannot
-# fail during a rolling rebuild if app.py and the package are briefly out of sync.
 FALLBACK_MODELS = (
     "openai/gpt-oss-120b",
     "Qwen/Qwen3-4B-Thinking-2507",
@@ -46,7 +43,6 @@ class GenerationResult:
 
 
 def get_hf_token() -> str | None:
-    """Read the Hugging Face token without logging or exposing it."""
     token = os.getenv("HF_TOKEN")
     if token:
         return token
@@ -346,3 +342,14 @@ if run:
 
 st.divider()
 st.caption("PromptPulse · GitHub Actions quality gates · Hugging Face Inference Providers · Streamlit")
+st.markdown(
+    """
+<div style="text-align:center;color:#64748b;font-size:0.88rem;padding:0.5rem 0 1rem;">
+  <strong>Hendarmawan, PhD Eng.</strong> &nbsp;·&nbsp;
+  <a href="https://github.com/h00w/" target="_blank">GitHub</a> &nbsp;·&nbsp;
+  <a href="https://www.linkedin.com/in/hender/" target="_blank">LinkedIn</a> &nbsp;·&nbsp;
+  <a href="https://hendarmawan.se" target="_blank">hendarmawan.se</a>
+</div>
+""",
+    unsafe_allow_html=True,
+)
