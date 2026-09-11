@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
+from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -11,16 +13,126 @@ if str(ROOT) not in sys.path:
 
 import pandas as pd
 import streamlit as st
+from huggingface_hub import InferenceClient
 
-from promptpulse.config import DEFAULT_MODEL, PULSE_PASS_THRESHOLD
+from promptpulse.config import DEFAULT_MODEL, DEFAULT_PROVIDER, PULSE_PASS_THRESHOLD, SYSTEM_PROMPT
 from promptpulse.data import load_dataset
 from promptpulse.evaluation import evaluate_response
-from promptpulse.inference import (
-    FALLBACK_MODELS,
-    GenerationConfig,
-    generate_response_with_fallback,
-    get_hf_token,
+
+# Keep the deployed Streamlit entrypoint self-contained. This intentionally avoids
+# importing runtime symbols from promptpulse.inference so Community Cloud cannot
+# fail during a rolling rebuild if app.py and the package are briefly out of sync.
+FALLBACK_MODELS = (
+    "openai/gpt-oss-120b",
+    "Qwen/Qwen3-4B-Thinking-2507",
+    "google/gemma-2-2b-it",
+    "Qwen/Qwen2.5-7B-Instruct-1M",
 )
+
+
+@dataclass(frozen=True)
+class GenerationConfig:
+    model: str = DEFAULT_MODEL
+    provider: str = DEFAULT_PROVIDER
+    temperature: float = 0.2
+    max_tokens: int = 220
+
+
+@dataclass(frozen=True)
+class GenerationResult:
+    text: str
+    model: str
+    attempted_models: tuple[str, ...]
+
+
+def get_hf_token() -> str | None:
+    """Read the Hugging Face token without logging or exposing it."""
+    token = os.getenv("HF_TOKEN")
+    if token:
+        return token
+    try:
+        return st.secrets.get("HF_TOKEN")
+    except Exception:
+        return None
+
+
+def build_messages(user_query: str, reference_context: str) -> list[dict[str, str]]:
+    return [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": (
+                "APPROVED CONTEXT:\n"
+                f"{reference_context}\n\n"
+                "USER QUESTION:\n"
+                f"{user_query}"
+            ),
+        },
+    ]
+
+
+def _is_provider_compatibility_error(exc: Exception) -> bool:
+    message = str(exc).casefold()
+    return any(
+        marker in message
+        for marker in (
+            "model_not_supported",
+            "not supported by any provider",
+            "no provider available",
+            "provider is not available",
+            "model is not supported",
+        )
+    )
+
+
+def generate_response_with_fallback(
+    user_query: str,
+    reference_context: str,
+    config: GenerationConfig,
+) -> GenerationResult:
+    token = get_hf_token()
+    if not token:
+        raise RuntimeError("HF_TOKEN is not configured.")
+
+    candidates = tuple(
+        dict.fromkeys(
+            model_name
+            for model_name in (config.model, *FALLBACK_MODELS)
+            if model_name
+        )
+    )
+    attempted: list[str] = []
+    compatibility_errors: list[str] = []
+
+    client = InferenceClient(api_key=token, provider=config.provider)
+
+    for model_name in candidates:
+        attempted.append(model_name)
+        try:
+            completion = client.chat.completions.create(
+                model=model_name,
+                messages=build_messages(user_query, reference_context),
+                temperature=config.temperature,
+                max_tokens=config.max_tokens,
+            )
+            text = completion.choices[0].message.content
+            if not text or not text.strip():
+                raise RuntimeError(f"Model {model_name!r} returned an empty response.")
+            return GenerationResult(
+                text=text.strip(),
+                model=model_name,
+                attempted_models=tuple(attempted),
+            )
+        except Exception as exc:
+            if not _is_provider_compatibility_error(exc):
+                raise
+            compatibility_errors.append(f"{model_name}: {exc}")
+
+    raise RuntimeError(
+        "No configured Hugging Face model is available through the enabled "
+        "Inference Providers. " + " | ".join(compatibility_errors)
+    )
+
 
 st.set_page_config(
     page_title="PromptPulse · LLM Quality Monitor",
