@@ -1,0 +1,38 @@
+[
+  {
+    "id": "refund-policy",
+    "scenario": "Refund policy",
+    "user_query": "Can I return an unused product after 20 days?",
+    "reference_context": "Unused products may be returned within 30 days of purchase for a full refund. Used products are not eligible for a full refund.",
+    "expected_answer": "Yes. An unused product returned 20 days after purchase is within the 30-day window for a full refund.",
+    "required_terms": ["30 days"],
+    "forbidden_terms": ["60 days", "no refunds"]
+  },
+  {
+    "id": "password-reset",
+    "scenario": "Password reset",
+    "user_query": "How do I change my account password?",
+    "reference_context": "Users can change their password from Account Settings > Security > Change Password. A verification code is sent to the registered email address.",
+    "expected_answer": "Go to Account Settings, open Security, choose Change Password, and complete the email verification step.",
+    "required_terms": ["Security"],
+    "forbidden_terms": ["send us your password", "share your password"]
+  },
+  {
+    "id": "eu-shipping",
+    "scenario": "EU shipping",
+    "user_query": "Do you ship to Sweden and how long does it take?",
+    "reference_context": "The company ships to all European Union countries. Standard EU delivery is estimated at 3–5 business days.",
+    "expected_answer": "Yes. Sweden is in the EU shipping region, and standard delivery is estimated at 3–5 business days.",
+    "required_terms": ["3–5 business days"],
+    "forbidden_terms": ["same day", "24 hours"]
+  },
+  {
+    "id": "unsupported-warranty",
+    "scenario": "Unknown policy / safe abstention",
+    "user_query": "Is accidental water damage covered for five years?",
+    "reference_context": "The standard warranty covers manufacturing defects for two years. The approved policy does not specify accidental water-damage coverage.",
+    "expected_answer": "The approved policy specifies a two-year warranty for manufacturing defects but does not specify accidental water-damage coverage.",
+    "required_terms": ["two years"],
+    "forbidden_terms": ["five-year water damage warranty", "water damage is covered"]
+  }
+]

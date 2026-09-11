@@ -1,0 +1,68 @@
+name: Sync to Hugging Face
+
+on:
+  workflow_run:
+    workflows: ["AI Evals"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hf-space-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout tested main commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 0
+          lfs: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Hugging Face Hub CLI
+        run: pip install "huggingface_hub>=0.34,<2"
+
+      - name: Ensure Hugging Face Space exists
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          test -n "$HF_TOKEN" || (echo "Missing GitHub secret HF_TOKEN" && exit 1)
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          api.create_repo(
+              repo_id="h0000w/PromptPulse",
+              repo_type="space",
+              space_sdk="docker",
+              exist_ok=True,
+          )
+          print("Space h0000w/PromptPulse is ready.")
+          PY
+
+      - name: Push tested commit to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "PromptPulse CI"
+          git remote remove hf 2>/dev/null || true
+          git remote add hf "https://x-token-auth:${HF_TOKEN}@huggingface.co/spaces/h0000w/PromptPulse"
+          git push --force hf HEAD:main
