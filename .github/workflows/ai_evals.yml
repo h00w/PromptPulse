@@ -18,6 +18,8 @@ jobs:
   quality-gate:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      PYTHONPATH: ${{ github.workspace }}
 
     steps:
       - name: Checkout
@@ -42,7 +44,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           mkdir -p reports
-          pytest -q --junitxml=reports/junit.xml
+          python -m pytest -q --junitxml=reports/junit.xml
 
       - name: Validate Streamlit app imports
         run: |
