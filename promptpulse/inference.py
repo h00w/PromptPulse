@@ -6,7 +6,17 @@ from typing import Iterator
 
 from huggingface_hub import InferenceClient
 
-from .config import DEFAULT_MODEL, DEFAULT_PROVIDER, FALLBACK_MODELS, SYSTEM_PROMPT
+from .config import DEFAULT_MODEL, DEFAULT_PROVIDER, SYSTEM_PROMPT
+
+# Keep the provider fallback registry in the inference module that consumes it.
+# This avoids deployment-time import mismatches when Streamlit Cloud rebuilds from
+# closely spaced commits and keeps model-routing concerns out of static app config.
+FALLBACK_MODELS = (
+    "openai/gpt-oss-120b",
+    "Qwen/Qwen3-4B-Thinking-2507",
+    "google/gemma-2-2b-it",
+    "Qwen/Qwen2.5-7B-Instruct-1M",
+)
 
 
 @dataclass(frozen=True)
