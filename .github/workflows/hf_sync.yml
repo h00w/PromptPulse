@@ -1,9 +1,9 @@
 name: Sync to Hugging Face
 
+# Hugging Face currently requires a PRO subscription for new Gradio/Docker
+# Spaces on cpu-basic. Keep this deployment path available without turning
+# every successful GitHub quality gate red for free-tier users.
 on:
-  workflow_run:
-    workflows: ["AI Evals"]
-    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -15,18 +15,14 @@ concurrency:
 
 jobs:
   deploy:
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
-      - name: Checkout tested main commit
+      - name: Checkout main
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: main
           fetch-depth: 0
           lfs: true
 
@@ -57,7 +53,7 @@ jobs:
           print("Space h0000w/PromptPulse is ready.")
           PY
 
-      - name: Push tested commit to Hugging Face Space
+      - name: Push main to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
