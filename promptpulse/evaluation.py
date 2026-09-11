@@ -103,9 +103,12 @@ def evaluate_response(
     coverage = reference_coverage(reference_context, response)
     policy, failures = policy_compliance(response, required_terms, forbidden_terms)
 
+    # Grounding and explicit policy are weighted above shallow lexical overlap.
+    # This keeps concise, well-grounded answers from being penalized simply for
+    # paraphrasing the user's wording while still making policy violations fail.
     pulse = round(
-        (0.25 * relevance)
-        + (0.30 * ground)
+        (0.20 * relevance)
+        + (0.35 * ground)
         + (0.20 * coverage)
         + (0.25 * policy),
         3,
@@ -113,7 +116,7 @@ def evaluate_response(
 
     reasons = list(failures)
     if relevance < 0.45:
-        reasons.append("Low lexical relevance to the user question.")
+        reasons.append("Low lexical relevance to the user question; review semantic judge results if enabled.")
     if ground < 0.55:
         reasons.append("Response contains substantial content not supported by approved context.")
     if coverage < 0.45:
