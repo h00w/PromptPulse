@@ -4,7 +4,7 @@
     "scenario": "Refund policy",
     "user_query": "Can I return an unused product after 20 days?",
     "reference_context": "Unused products may be returned within 30 days of purchase for a full refund. Used products are not eligible for a full refund.",
-    "expected_answer": "Yes. An unused product returned 20 days after purchase is within the 30-day window for a full refund.",
+    "expected_answer": "Yes. An unused product returned after 20 days is within the 30 days allowed for a full refund.",
     "required_terms": ["30 days"],
     "forbidden_terms": ["60 days", "no refunds"]
   },
@@ -31,7 +31,7 @@
     "scenario": "Unknown policy / safe abstention",
     "user_query": "Is accidental water damage covered for five years?",
     "reference_context": "The standard warranty covers manufacturing defects for two years. The approved policy does not specify accidental water-damage coverage.",
-    "expected_answer": "The approved policy specifies a two-year warranty for manufacturing defects but does not specify accidental water-damage coverage.",
+    "expected_answer": "The approved policy specifies two years of warranty coverage for manufacturing defects, but it does not specify accidental water-damage coverage.",
     "required_terms": ["two years"],
     "forbidden_terms": ["five-year water damage warranty", "water damage is covered"]
   }
