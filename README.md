@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="https://img.shields.io/badge/Production%20AI-Automation-6C63FF?style=for-the-badge" alt="PromptPulse">
-</p>
-
 # ⚡ PromptPulse
 
 [![AI Evals](https://github.com/h00w/PromptPulse/actions/workflows/ai_evals.yml/badge.svg)](https://github.com/h00w/PromptPulse/actions/workflows/ai_evals.yml)
