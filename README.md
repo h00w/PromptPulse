@@ -16,7 +16,7 @@ license: mit
 PromptPulse is a production-oriented evaluation pipeline for testing chatbot quality before prompt, model, or application changes reach users. It combines dataset-driven QA, Hugging Face inference, fast deterministic gates, optional DeepEval LLM-as-a-judge evaluation, GitHub Actions, and a live Streamlit dashboard.
 
 [![AI Evals](https://github.com/h00w/PromptPulse/actions/workflows/ai_evals.yml/badge.svg)](https://github.com/h00w/PromptPulse/actions/workflows/ai_evals.yml)
-[![Sync to Hugging Face](https://github.com/h00w/PromptPulse/actions/workflows/hf_sync.yml/badge.svg)](https://github.com/h00w/PromptPulse/actions/workflows/hf_sync.yml)
+[![HF Deploy](https://img.shields.io/badge/Hugging%20Face-deploy%20optional-FFD21E?logo=huggingface)](https://github.com/h00w/PromptPulse/actions/workflows/hf_sync.yml)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -33,8 +33,8 @@ PromptPulse turns those checks into a repeatable release gate.
 - **Fast CI gates** — deterministic lexical/grounding/policy metrics run on every push and pull request.
 - **Optional DeepEval judge** — when `OPENAI_API_KEY` is configured, CI also runs DeepEval Answer Relevancy and Hallucination metrics.
 - **Interactive evaluation demo** — visitors can choose a scenario, adjust generation controls, run a model, inspect the response, and see the quality scorecard.
-- **Automated deployment** — pushes to `main` sync this repository to the Hugging Face Docker Space `h0000w/PromptPulse`.
-- **Portable frontend** — the same `app/app.py` runs on Hugging Face Spaces or Streamlit Community Cloud.
+- **Portable frontend** — the same `app/app.py` runs on Streamlit Community Cloud or a Hugging Face Docker Space.
+- **Optional HF deployment path** — a manual GitHub Action can sync `main` to `h0000w/PromptPulse` when the Hugging Face account has Docker Spaces access.
 
 ## Architecture
 
@@ -48,12 +48,12 @@ flowchart LR
     E --> F
     F -->|pass| G[main]
     F -->|fail| H[Block regression]
-    G --> I[HF sync workflow]
-    I --> J[Hugging Face Docker Space]
-    J --> K[Streamlit PromptPulse demo]
-    K --> L[HF Inference Providers]
-    L --> M[Live response]
-    M --> N[Pulse scorecard]
+    G --> I[Streamlit Community Cloud]
+    I --> J[PromptPulse live dashboard]
+    J --> K[HF Inference Providers]
+    K --> L[Live response]
+    L --> M[Pulse scorecard]
+    G -. optional .-> N[HF Docker Space]
 ```
 
 ## Repository layout
@@ -109,7 +109,7 @@ python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 
 pip install -r requirements-dev.txt
-pytest -q
+python -m pytest -q
 streamlit run app/app.py
 ```
 
@@ -137,7 +137,7 @@ Every record in `tests/test_dataset.json` has an ID, scenario, user query, appro
   "scenario": "Refund policy",
   "user_query": "Can I return an unused product after 20 days?",
   "reference_context": "Unused products may be returned within 30 days of purchase for a full refund.",
-  "expected_answer": "Yes. An unused product returned 20 days after purchase is within the 30-day return window.",
+  "expected_answer": "Yes. An unused product returned after 20 days is within the 30 days allowed for a full refund.",
   "required_terms": ["30 days"],
   "forbidden_terms": ["60 days"]
 }
@@ -176,65 +176,76 @@ The tests skip cleanly when the judge key is absent.
 
 `.github/workflows/ai_evals.yml` runs on pushes and pull requests:
 
-- installs Python dependencies
+- installs pinned Python dependencies
 - validates the JSON dataset
-- runs unit and deterministic evaluation gates
+- runs deterministic quality gates
 - optionally runs DeepEval when a judge key is configured
-- uploads the evaluation report as an artifact
+- validates application imports
+- uploads a JUnit evaluation report artifact
+
+A successful run is the release gate for `main`.
 
 ### Hugging Face deployment workflow
 
-`.github/workflows/hf_sync.yml` runs only after `AI Evals` succeeds on `main`.
+`.github/workflows/hf_sync.yml` is intentionally **manual / opt-in**.
 
-It:
+Hugging Face currently requires a PRO subscription for creating new Gradio or Docker Spaces on `cpu-basic`. Keeping this workflow manual prevents a valid GitHub quality gate from becoming red simply because a free-tier HF account cannot create the Docker Space.
 
-1. checks out the tested commit,
-2. ensures the Space `h0000w/PromptPulse` exists,
-3. pushes the exact commit to the Hugging Face Space.
+When Docker Spaces access is available, run **Actions → Sync to Hugging Face → Run workflow**. The workflow:
+
+1. checks out `main`,
+2. ensures `h0000w/PromptPulse` exists as a Docker Space,
+3. pushes the repository to the Space.
 
 Required GitHub repository secret:
 
 - `HF_TOKEN` — Hugging Face token with permission to create/write the Space.
 
-> `GITHUB_SYNC_TOKEN` on Hugging Face is not required for the GitHub → Hugging Face deployment direction used here.
+> `GITHUB_SYNC_TOKEN` on Hugging Face is not required for the GitHub → Hugging Face direction used here.
 
-## Deploy to Hugging Face Spaces
+## Recommended deployment: Streamlit Community Cloud
 
-PromptPulse uses **Docker SDK + Streamlit**, which is the current recommended Hugging Face pattern for Streamlit apps.
+For the current free deployment path, use **Streamlit Community Cloud** as the primary public demo.
 
-Manual setup is optional because the workflow can create the Space automatically. If you create it yourself, use:
+Deploy from `share.streamlit.io` with:
+
+- Repository: `h00w/PromptPulse`
+- Branch: `main`
+- Main file: `app/app.py`
+- Python: `3.11`
+
+In **Advanced settings → Secrets**, add:
+
+```toml
+HF_TOKEN = "your_hugging_face_token"
+```
+
+Community Cloud reads the root `requirements.txt` and `.streamlit/config.toml`, both of which are already configured in this repository. Once deployed, pushes to the connected GitHub repository are picked up automatically by Streamlit Community Cloud.
+
+## Optional deployment: Hugging Face Spaces
+
+PromptPulse remains Docker-Space compatible because Docker + Streamlit is Hugging Face's supported path for Streamlit applications.
+
+If your Hugging Face account has the required Spaces access, use:
 
 - Owner: `h0000w`
 - Space name: `PromptPulse`
 - SDK: `Docker`
 - App port: `7860`
 
-Then add the Space secret:
+Then configure an `HF_TOKEN` Space secret if the running demo should call Hugging Face Inference Providers.
 
-- `HF_TOKEN` if you want the running demo to call Hugging Face Inference Providers.
+### Hosting recommendation
 
-The repository sync token and the runtime inference token can be the same token if its permissions are appropriate, but separate least-privilege tokens are preferable in a production organization.
+**Primary: Streamlit Community Cloud.** It is the simplest free production demo for the current repository and automatically tracks GitHub changes.
 
-## Deploy to Streamlit Community Cloud
-
-This repo is also directly deployable at Streamlit Community Cloud:
-
-- Repository: `h00w/PromptPulse`
-- Branch: `main`
-- Main file: `app/app.py`
-
-Add `HF_TOKEN` in **App settings → Secrets** for live inference.
-
-### Recommended hosting
-
-**Primary demo: Hugging Face Spaces.** It puts an AI evaluation project in the ecosystem recruiters and ML engineers expect and keeps the model/inference story close to the application.
-
-**Secondary mirror: Streamlit Community Cloud.** Useful as a backup URL and for fast Streamlit-native operations.
+**Optional mirror: Hugging Face Docker Space.** Use it when the account has PRO/Docker Spaces access and you want an AI-community-native showcase URL.
 
 ## Security
 
 - No tokens are committed to the repository.
 - Secrets are read only from environment variables or Streamlit secrets.
+- `.streamlit/secrets.toml` is gitignored.
 - The app does not print token values.
 - User input is sent to the configured inference provider only when live inference is enabled.
 - GitHub Actions uses repository secrets.
