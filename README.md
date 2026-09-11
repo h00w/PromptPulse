@@ -1,14 +1,18 @@
+<p align="center">
+  <img src="https://img.shields.io/badge/Production%20AI-Automation-6C63FF?style=for-the-badge" alt="PromptPulse">
+</p>
+
 # ⚡ PromptPulse
-
-**Continuous evaluation and release gating for LLM chatbots.**
-
-PromptPulse is a production-oriented evaluation pipeline for testing chatbot quality before prompt, model, or application changes reach users. It combines dataset-driven QA, Hugging Face inference, fast deterministic gates, optional DeepEval LLM-as-a-judge evaluation, GitHub Actions, and a live Streamlit dashboard.
-
 
 [![AI Evals](https://github.com/h00w/PromptPulse/actions/workflows/ai_evals.yml/badge.svg)](https://github.com/h00w/PromptPulse/actions/workflows/ai_evals.yml)
 [![HF Deploy](https://img.shields.io/badge/Hugging%20Face-deploy%20optional-FFD21E?logo=huggingface)](https://github.com/h00w/PromptPulse/actions/workflows/hf_sync.yml)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+
+**Continuous evaluation and release gating for LLM chatbots.**
+
+PromptPulse is a production-oriented evaluation pipeline for testing chatbot quality before prompt, model, or application changes reach users. It combines dataset-driven QA, Hugging Face inference, fast deterministic gates, optional DeepEval LLM-as-a-judge evaluation, GitHub Actions, and a live Streamlit dashboard.
 
 
 ## Why this project exists
