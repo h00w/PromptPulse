@@ -1,24 +1,15 @@
----
-title: PromptPulse
-emoji: ⚡
-colorFrom: indigo
-colorTo: purple
-sdk: docker
-app_port: 7860
-pinned: false
-license: mit
----
-
 # ⚡ PromptPulse
 
 **Continuous evaluation and release gating for LLM chatbots.**
 
 PromptPulse is a production-oriented evaluation pipeline for testing chatbot quality before prompt, model, or application changes reach users. It combines dataset-driven QA, Hugging Face inference, fast deterministic gates, optional DeepEval LLM-as-a-judge evaluation, GitHub Actions, and a live Streamlit dashboard.
 
-[![AI Evals](https://github.com/h00w/PromptPulse/actions/workflows/ai_evals.yml/badge.svg)](https://github.com/h00w/PromptPulse/actions/workflows/ai_evals.yml)
-[![HF Deploy](https://img.shields.io/badge/Hugging%20Face-deploy%20optional-FFD21E?logo=huggingface)](https://github.com/h00w/PromptPulse/actions/workflows/hf_sync.yml)
-[![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+<p align="center">
+  [![AI Evals](https://github.com/h00w/PromptPulse/actions/workflows/ai_evals.yml/badge.svg)](https://github.com/h00w/PromptPulse/actions/workflows/ai_evals.yml)
+  [![HF Deploy](https://img.shields.io/badge/Hugging%20Face-deploy%20optional-FFD21E?logo=huggingface)](https://github.com/h00w/PromptPulse/actions/workflows/hf_sync.yml)
+  [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+</p>
 
 ## Why this project exists
 
