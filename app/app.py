@@ -12,10 +12,14 @@ if str(ROOT) not in sys.path:
 import pandas as pd
 import streamlit as st
 
-from promptpulse.config import DEFAULT_MODEL, PULSE_PASS_THRESHOLD
+from promptpulse.config import DEFAULT_MODEL, FALLBACK_MODELS, PULSE_PASS_THRESHOLD
 from promptpulse.data import load_dataset
 from promptpulse.evaluation import evaluate_response
-from promptpulse.inference import GenerationConfig, generate_response, get_hf_token
+from promptpulse.inference import (
+    GenerationConfig,
+    generate_response_with_fallback,
+    get_hf_token,
+)
 
 st.set_page_config(
     page_title="PromptPulse · LLM Quality Monitor",
@@ -59,7 +63,7 @@ with st.sidebar:
     scenario_name = st.selectbox("Evaluation scenario", list(scenario_by_name))
     row = scenario_by_name[scenario_name]
 
-    model = st.text_input("Hugging Face model", value=DEFAULT_MODEL)
+    model = st.text_input("Preferred Hugging Face model", value=DEFAULT_MODEL)
     temperature = st.slider("Temperature", 0.0, 1.2, 0.2, 0.05)
     max_tokens = st.slider("Max output tokens", 64, 512, 220, 16)
 
@@ -67,6 +71,13 @@ with st.sidebar:
     st.divider()
     if live_available:
         st.success("Live HF inference enabled")
+        st.caption(
+            "If the preferred model is unavailable for your enabled Inference Providers, "
+            "PromptPulse automatically tries compatible fallback models."
+        )
+        with st.expander("Fallback order"):
+            for candidate in FALLBACK_MODELS:
+                st.code(candidate, language=None)
     else:
         st.warning("Demo mode: HF_TOKEN not configured")
     st.caption("Demo mode uses the curated expected answer so visitors can explore the evaluation UI without secrets.")
@@ -115,11 +126,22 @@ if run:
     started = time.perf_counter()
     mode = "Live Hugging Face inference"
     error = None
+    actual_model = config.model
+    attempted_models: tuple[str, ...] = (config.model,)
 
     if live_available:
         try:
             with st.spinner("Calling Hugging Face Inference Providers…"):
-                response = generate_response(row["user_query"], row["reference_context"], config)
+                generation = generate_response_with_fallback(
+                    row["user_query"],
+                    row["reference_context"],
+                    config,
+                )
+            response = generation.text
+            actual_model = generation.model
+            attempted_models = generation.attempted_models
+            if actual_model != config.model:
+                mode = "Live Hugging Face inference · automatic model fallback"
         except Exception as exc:
             error = str(exc)
             response = row["expected_answer"]
@@ -142,7 +164,7 @@ if run:
     header_left, header_right = st.columns([3, 1])
     with header_left:
         st.markdown("## Evaluation result")
-        st.caption(f"{mode} · {latency_ms} ms")
+        st.caption(f"{mode} · {latency_ms} ms · model: {actual_model}")
     with header_right:
         status = "PASS" if result.passed else "FAIL"
         klass = "status-pass" if result.passed else "status-fail"
@@ -150,6 +172,11 @@ if run:
 
     if error:
         st.warning(f"Live inference failed, so the demo used the curated response. Provider message: {error}")
+    elif actual_model != config.model:
+        st.info(
+            f"The preferred model `{config.model}` was unavailable through your enabled providers. "
+            f"PromptPulse recovered automatically with `{actual_model}`."
+        )
 
     st.markdown("### Model response")
     st.write(response)
@@ -194,7 +221,9 @@ if run:
     with st.expander("Machine-readable result"):
         payload = {
             "scenario_id": row["id"],
-            "model": config.model,
+            "requested_model": config.model,
+            "actual_model": actual_model,
+            "attempted_models": list(attempted_models),
             "mode": mode,
             "latency_ms": latency_ms,
             "response": response,
