@@ -1,104 +1,149 @@
-# ⚡ PromptPulse
+<p align="center">
+  <a href="https://prompt-pulse.streamlit.app/">
+    <img src="https://raw.githubusercontent.com/h00w/h00w.github.io/refs/heads/main/public/prompt-pulse.png" alt="PromptPulse — continuous LLM evaluation and release gating" width="100%">
+  </a>
+</p>
 
-[![AI Evals](https://github.com/h00w/PromptPulse/actions/workflows/ai_evals.yml/badge.svg)](https://github.com/h00w/PromptPulse/actions/workflows/ai_evals.yml)
-[![HF Deploy](https://img.shields.io/badge/Hugging%20Face-deploy%20optional-FFD21E?logo=huggingface)](https://github.com/h00w/PromptPulse/actions/workflows/hf_sync.yml)
-[![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+<h1 align="center">PromptPulse</h1>
 
+<p align="center">
+  <strong>Continuous LLM Evaluation & Release Gating</strong><br>
+  Production-oriented LLM quality pipeline that turns chatbot behavior into repeatable release gates across relevance, groundedness, reference coverage and policy compliance.
+</p>
 
-**Continuous evaluation and release gating for LLM chatbots.**
+<p align="center">
+  <a href="https://prompt-pulse.streamlit.app/"><strong>Live Demo ↗</strong></a> ·
+  <a href="#architecture"><strong>Architecture</strong></a> ·
+  <a href="#quality-gates"><strong>Quality Gates</strong></a> ·
+  <a href="#cicd"><strong>CI/CD</strong></a>
+</p>
 
-PromptPulse is a production-oriented evaluation pipeline for testing chatbot quality before prompt, model, or application changes reach users. It combines dataset-driven QA, Hugging Face inference, fast deterministic gates, optional DeepEval LLM-as-a-judge evaluation, GitHub Actions, and a live Streamlit dashboard.
+<p align="center">
+  <a href="https://github.com/h00w/PromptPulse/actions/workflows/ai_evals.yml"><img alt="AI Evals" src="https://github.com/h00w/PromptPulse/actions/workflows/ai_evals.yml/badge.svg"></a>
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white">
+  <img alt="Hugging Face" src="https://img.shields.io/badge/Hugging%20Face-Inference-FFD21E?logo=huggingface">
+  <img alt="DeepEval" src="https://img.shields.io/badge/DeepEval-Optional%20Judge-6C63FF">
+</p>
 
+---
 
-## Why this project exists
+## Why PromptPulse exists
 
-Traditional unit tests verify deterministic software. LLM applications also need **behavioral tests**: does the answer remain relevant, grounded in approved context, complete enough to satisfy policy, and free from prohibited content after a prompt or model change?
+Traditional unit tests verify deterministic software. LLM applications also need **behavioral tests**: after a prompt, model, retrieval, or application change, does the system remain relevant, grounded, policy-compliant, and complete enough for release?
 
-PromptPulse turns those checks into a repeatable release gate.
+PromptPulse turns those questions into a repeatable engineering loop:
 
-### What it demonstrates
+> **Measure → Compare → Gate → Improve → Release**
 
-- **Dataset-driven evaluation** — QA scenarios live in `tests/test_dataset.json`; adding a case requires no Python changes.
-- **Hugging Face inference** — live generations use `huggingface_hub.InferenceClient` and Inference Providers instead of downloading multi-GB model weights into CI.
-- **Fast CI gates** — deterministic lexical/grounding/policy metrics run on every push and pull request.
-- **Optional DeepEval judge** — when `OPENAI_API_KEY` is configured, CI also runs DeepEval Answer Relevancy and Hallucination metrics.
-- **Interactive evaluation demo** — visitors can choose a scenario, adjust generation controls, run a model, inspect the response, and see the quality scorecard.
-- **Portable frontend** — the same `app/app.py` runs on Streamlit Community Cloud or a Hugging Face Docker Space.
-- **Optional HF deployment path** — a manual GitHub Action can sync `main` to `h0000w/PromptPulse` when the Hugging Face account has Docker Spaces access.
+The project combines dataset-driven evaluation, live Hugging Face inference, fast deterministic gates, optional DeepEval semantic judging, GitHub Actions, and a Streamlit evaluation dashboard.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    A[Prompt / model / dataset change] --> B[GitHub]
-    B --> C[GitHub Actions]
-    C --> D[Fast deterministic gates]
-    C --> E[Optional DeepEval judge]
-    D --> F{Quality gate}
+    A[Prompt / Model / Dataset Change] --> B[Versioned Evaluation Cases]
+    B --> C[Candidate Generation]
+    C --> D[Deterministic Metrics]
+    C --> E[Optional Semantic Judge]
+    D --> F{Release Gate}
     E --> F
-    F -->|pass| G[main]
-    F -->|fail| H[Block regression]
-    G --> I[Streamlit Community Cloud]
-    I --> J[PromptPulse live dashboard]
-    J --> K[HF Inference Providers]
-    K --> L[Live response]
-    L --> M[Pulse scorecard]
-    G -. optional .-> N[HF Docker Space]
+    F -->|pass| G[Release Ready]
+    F -->|fail| H[Block Regression]
+    G --> I[Production / Live Demo]
+    I --> J[New Failure Evidence]
+    J --> B
 ```
 
-## Repository layout
+## What is evaluated
 
-```text
-.
-├── .github/workflows/
-│   ├── ai_evals.yml
-│   └── hf_sync.yml
-├── .streamlit/config.toml
-├── app/app.py
-├── promptpulse/
-│   ├── __init__.py
-│   ├── config.py
-│   ├── data.py
-│   ├── evaluation.py
-│   └── inference.py
-├── tests/
-│   ├── test_dataset.json
-│   ├── test_evaluation.py
-│   └── test_deepeval.py
-├── Dockerfile
-├── requirements.txt
-├── requirements-dev.txt
-└── README.md
-```
+| Metric | Purpose | Release signal |
+| --- | --- | --- |
+| Answer relevance | response addresses the user query | regression indicator |
+| Groundedness | response stays within approved context | critical quality signal |
+| Reference coverage | required source information is represented | completeness signal |
+| Policy compliance | required terms present, prohibited terms absent | deterministic blocker |
+| Pulse score | weighted aggregate | overall comparison signal |
+| DeepEval judge | optional semantic evaluation | supporting evidence |
 
-## Live demo
+The deterministic checks remain transparent and reproducible. Semantic judging is supplemental rather than unquestioned release authority.
 
-The demo is designed around evaluation rather than a generic chat UI.
+## Evaluation flow
 
-1. Pick an evaluation scenario from the sidebar.
-2. Review the approved reference context and expected behavior.
-3. Choose a Hugging Face model and generation settings.
-4. Click **Run Live Evaluation**.
-5. PromptPulse generates an answer, evaluates it, and displays:
-   - **Answer relevance**
-   - **Groundedness**
-   - **Reference coverage**
-   - **Policy compliance**
-   - **Overall Pulse score**
-6. Inspect reasons and the raw response.
+1. Select a versioned scenario.
+2. Load the user query, approved reference context, and expected behavior.
+3. Generate a response with the configured Hugging Face model.
+4. Calculate deterministic quality metrics.
+5. Optionally run DeepEval when judge credentials are available.
+6. Apply the release threshold.
+7. Preserve failure evidence as the basis for the next regression case.
 
-If `HF_TOKEN` is not available, the app automatically falls back to deterministic demo responses so the dashboard remains explorable.
+## Live evaluation experience
 
-## Quick start
+The Streamlit application is designed around evaluation rather than a generic chatbot UI. A reviewer can:
+
+- choose an evaluation scenario;
+- inspect approved reference context;
+- select a Hugging Face model and generation settings;
+- run live inference;
+- inspect relevance, groundedness, reference coverage, policy compliance and Pulse score; and
+- review the raw model response and reasons behind the score.
+
+If `HF_TOKEN` is absent, deterministic demo responses keep the evaluation interface explorable without exposing credentials.
+
+## Quality gates
+
+### Deterministic layer
+
+Fast checks run in CI without a paid judge API. These include relevance, grounding, reference coverage, required/forbidden term rules and the aggregate Pulse score.
+
+### Optional semantic layer
+
+When `OPENAI_API_KEY` is configured, DeepEval can add semantic metrics such as answer relevancy and hallucination checks against trusted context.
+
+The semantic layer is optional by design: CI remains reproducible even when external judge credentials are unavailable.
+
+## CI/CD
+
+`.github/workflows/ai_evals.yml` runs evaluation on pushes and pull requests:
+
+- install pinned dependencies;
+- validate the evaluation dataset;
+- run deterministic quality gates;
+- run optional DeepEval tests when configured;
+- validate application imports; and
+- publish test artifacts.
+
+A failed quality gate blocks the regression from being treated as release-ready.
+
+## Evaluation dataset
+
+Scenarios live in `tests/test_dataset.json`, allowing new regression cases without changing evaluation code.
+
+Each record can contain:
+
+- scenario ID;
+- user query;
+- approved reference context;
+- expected answer;
+- required terms; and
+- forbidden terms.
+
+This makes evaluation assets versionable alongside the application code.
+
+## Security and credential boundaries
+
+- no tokens are committed to the repository;
+- secrets are read from environment variables or Streamlit secrets;
+- local secrets are gitignored;
+- token values are never printed;
+- runtime inference and CI deployment can use separate least-privilege credentials.
+
+## Run locally
 
 ```bash
 git clone https://github.com/h00w/PromptPulse.git
 cd PromptPulse
-
 python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-
 pip install -r requirements-dev.txt
 python -m pytest -q
 streamlit run app/app.py
@@ -111,149 +156,34 @@ export HF_TOKEN="your_token"
 streamlit run app/app.py
 ```
 
-Optional environment variables:
+## Production evolution
 
-```bash
-export PROMPTPULSE_MODEL="Qwen/Qwen2.5-7B-Instruct-1M"
-export PROMPTPULSE_PROVIDER="auto"
-```
+Natural extensions include:
 
-## Evaluation dataset
+- multi-turn benchmark cases;
+- prompt/model baseline-vs-candidate comparison;
+- latency and cost budgets;
+- RAG faithfulness checks;
+- historical run storage;
+- PR annotations for failed scenarios;
+- production trace ingestion; and
+- observability integration.
 
-Every record in `tests/test_dataset.json` has an ID, scenario, user query, approved reference context, expected answer, and optional required/forbidden terms.
+## Proof chain
 
-```json
-{
-  "id": "refund-policy",
-  "scenario": "Refund policy",
-  "user_query": "Can I return an unused product after 20 days?",
-  "reference_context": "Unused products may be returned within 30 days of purchase for a full refund.",
-  "expected_answer": "Yes. An unused product returned after 20 days is within the 30 days allowed for a full refund.",
-  "required_terms": ["30 days"],
-  "forbidden_terms": ["60 days"]
-}
-```
+**Dataset → Inference → Deterministic Evaluation → Semantic Evidence → CI Gate → Live Dashboard → Regression Learning**
 
-## Quality gates
+- Live demo: https://prompt-pulse.streamlit.app/
+- GitHub Actions: https://github.com/h00w/PromptPulse/actions/workflows/ai_evals.yml
+- Evaluation source: [`tests/test_dataset.json`](tests/test_dataset.json)
+- Evaluation engine: [`promptpulse/evaluation.py`](promptpulse/evaluation.py)
 
-PromptPulse uses two layers.
+## Author
 
-### 1. Fast deterministic gates
+**Hendarmawan, PhD Eng.**  
+LLMOps · AI Evaluation · Production AI · Release Engineering · AI Governance
 
-These always run in CI and require no paid judge API:
-
-| Metric | Meaning | Direction |
-|---|---|---|
-| Answer relevance | Query terms represented in the response | Higher is better |
-| Groundedness | Response claims overlap approved context | Higher is better |
-| Reference coverage | Approved context represented in the response | Higher is better |
-| Policy compliance | Required terms present and forbidden terms absent | Higher is better |
-| Pulse score | Weighted aggregate | Higher is better |
-
-These gates are intentionally transparent and deterministic. They are regression indicators, not replacements for semantic LLM judges.
-
-### 2. Optional DeepEval judge
-
-If `OPENAI_API_KEY` exists in GitHub Secrets, `tests/test_deepeval.py` runs DeepEval:
-
-- `AnswerRelevancyMetric`
-- `HallucinationMetric` using trusted `context`
-
-The tests skip cleanly when the judge key is absent.
-
-## CI/CD
-
-### AI evaluation workflow
-
-`.github/workflows/ai_evals.yml` runs on pushes and pull requests:
-
-- installs pinned Python dependencies
-- validates the JSON dataset
-- runs deterministic quality gates
-- optionally runs DeepEval when a judge key is configured
-- validates application imports
-- uploads a JUnit evaluation report artifact
-
-A successful run is the release gate for `main`.
-
-### Hugging Face deployment workflow
-
-`.github/workflows/hf_sync.yml` is intentionally **manual / opt-in**.
-
-Hugging Face currently requires a PRO subscription for creating new Gradio or Docker Spaces on `cpu-basic`. Keeping this workflow manual prevents a valid GitHub quality gate from becoming red simply because a free-tier HF account cannot create the Docker Space.
-
-When Docker Spaces access is available, run **Actions → Sync to Hugging Face → Run workflow**. The workflow:
-
-1. checks out `main`,
-2. ensures `h0000w/PromptPulse` exists as a Docker Space,
-3. pushes the repository to the Space.
-
-Required GitHub repository secret:
-
-- `HF_TOKEN` — Hugging Face token with permission to create/write the Space.
-
-> `GITHUB_SYNC_TOKEN` on Hugging Face is not required for the GitHub → Hugging Face direction used here.
-
-## Recommended deployment: Streamlit Community Cloud
-
-For the current free deployment path, use **Streamlit Community Cloud** as the primary public demo.
-
-Deploy from `share.streamlit.io` with:
-
-- Repository: `h00w/PromptPulse`
-- Branch: `main`
-- Main file: `app/app.py`
-- Python: `3.11`
-
-In **Advanced settings → Secrets**, add:
-
-```toml
-HF_TOKEN = "your_hugging_face_token"
-```
-
-Community Cloud reads the root `requirements.txt` and `.streamlit/config.toml`, both of which are already configured in this repository. Once deployed, pushes to the connected GitHub repository are picked up automatically by Streamlit Community Cloud.
-
-## Optional deployment: Hugging Face Spaces
-
-PromptPulse remains Docker-Space compatible because Docker + Streamlit is Hugging Face's supported path for Streamlit applications.
-
-If your Hugging Face account has the required Spaces access, use:
-
-- Owner: `h0000w`
-- Space name: `PromptPulse`
-- SDK: `Docker`
-- App port: `7860`
-
-Then configure an `HF_TOKEN` Space secret if the running demo should call Hugging Face Inference Providers.
-
-### Hosting recommendation
-
-**Primary: Streamlit Community Cloud.** It is the simplest free production demo for the current repository and automatically tracks GitHub changes.
-
-**Optional mirror: Hugging Face Docker Space.** Use it when the account has PRO/Docker Spaces access and you want an AI-community-native showcase URL.
-
-## Security
-
-- No tokens are committed to the repository.
-- Secrets are read only from environment variables or Streamlit secrets.
-- `.streamlit/secrets.toml` is gitignored.
-- The app does not print token values.
-- User input is sent to the configured inference provider only when live inference is enabled.
-- GitHub Actions uses repository secrets.
-- Production systems should use separate, least-privilege tokens for CI deployment and runtime inference.
-
-## Extending PromptPulse
-
-Natural next steps:
-
-- add multi-turn conversation datasets
-- add latency and cost budgets
-- persist historical runs to Postgres / DuckDB
-- add prompt-version comparison
-- add RAG faithfulness metrics
-- export JUnit/JSON reports to an observability platform such as Langfuse
-- add PR annotations for failed scenarios
-- add model/provider A/B comparison
+[Website](https://hendarmawan.se) · [LinkedIn](https://www.linkedin.com/in/hender/) · [GitHub](https://github.com/h00w)
 
 ## License
 
