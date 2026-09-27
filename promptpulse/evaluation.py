@@ -51,6 +51,9 @@ def policy_compliance(
     forbidden_terms: Iterable[str] = (),
 ) -> tuple[float, list[str]]:
     normalized = response.casefold()
+    def contains_term(term: str) -> bool:
+        # A policy phrase must not match inside another word or number.
+        return bool(re.search(r"(?<!\w)" + re.escape(term.casefold()) + r"(?!\w)", normalized))
     failures: list[str] = []
     required = list(required_terms)
     forbidden = list(forbidden_terms)
@@ -59,14 +62,14 @@ def policy_compliance(
 
     for term in required:
         checks += 1
-        if term.casefold() in normalized:
+        if contains_term(term):
             passed += 1
         else:
             failures.append(f"Missing required term: {term}")
 
     for term in forbidden:
         checks += 1
-        if term.casefold() not in normalized:
+        if not contains_term(term):
             passed += 1
         else:
             failures.append(f"Forbidden term present: {term}")
