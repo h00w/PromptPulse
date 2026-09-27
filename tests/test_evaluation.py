@@ -1,5 +1,5 @@
 from promptpulse.data import load_dataset
-from promptpulse.evaluation import evaluate_response
+from promptpulse.evaluation import evaluate_response, policy_compliance
 
 
 def test_dataset_schema_and_unique_ids():
@@ -44,3 +44,12 @@ def test_empty_answer_fails():
     )
     assert result.passed is False
     assert result.pulse_score < 0.70
+
+
+def test_policy_terms_do_not_match_inside_other_words_or_numbers():
+    score, failures = policy_compliance("Refund in 130 days; policy is unsafe.", required_terms=["30 days"], forbidden_terms=["safe"])
+    assert score == 0.5
+    assert failures == ["Missing required term: 30 days"]
+    score, failures = policy_compliance("Refund in 30 days; policy is safe.", required_terms=["30 days"], forbidden_terms=["safe"])
+    assert score == 0.5
+    assert failures == ["Forbidden term present: safe"]
