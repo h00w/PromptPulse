@@ -158,10 +158,15 @@ streamlit run app/app.py
 
 ## Production evolution
 
+Paired offline comparison is available with `python -m scripts.compare_runs baseline.json candidate.json`.
+Each file maps the dataset's case IDs to saved responses. The report holds on missing,
+unexpected or failed candidate cases, and flags an aggregate score decrease for review.
+It evaluates supplied responses; it does not call a model or claim live provider validation.
+
 Natural extensions include:
 
 - multi-turn benchmark cases;
-- prompt/model baseline-vs-candidate comparison;
+- live prompt/model comparison using the paired offline gate;
 - latency and cost budgets;
 - RAG faithfulness checks;
 - historical run storage;
