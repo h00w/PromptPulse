@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from math import isfinite
 from typing import Any, Mapping
 
 from .evaluation import evaluate_response
@@ -29,8 +30,8 @@ def compare_runs(
     *,
     mean_tolerance: float = 0.02,
 ) -> ComparisonReport:
-    if not dataset or mean_tolerance < 0:
-        raise ValueError("A non-empty dataset and non-negative tolerance are required.")
+    if not dataset or not isinstance(mean_tolerance, (int, float)) or not isfinite(mean_tolerance) or mean_tolerance < 0:
+        raise ValueError("A non-empty dataset and finite non-negative tolerance are required.")
     cases = {row["id"]: row for row in dataset}
     if len(cases) != len(dataset):
         raise ValueError("Dataset case IDs must be unique.")

@@ -1,5 +1,6 @@
 from promptpulse.comparison import compare_runs
 from promptpulse.data import load_dataset
+import pytest
 
 
 def _answers():
@@ -30,3 +31,10 @@ def test_policy_regression_holds_despite_other_good_cases():
     report = compare_runs(rows, answers, candidate)
     assert report.decision == "HOLD"
     assert "refund-policy" in report.regressed_cases
+
+
+@pytest.mark.parametrize("tolerance", [float("nan"), float("inf"), -0.01])
+def test_invalid_tolerance_cannot_turn_regression_into_pass(tolerance):
+    rows, answers = _answers()
+    with pytest.raises(ValueError, match="finite non-negative"):
+        compare_runs(rows, answers, answers, mean_tolerance=tolerance)
