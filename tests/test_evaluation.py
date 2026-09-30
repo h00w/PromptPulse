@@ -1,11 +1,29 @@
 from promptpulse.data import load_dataset
 from promptpulse.evaluation import evaluate_response, policy_compliance
+import json
+import pytest
 
 
 def test_dataset_schema_and_unique_ids():
     rows = load_dataset()
     assert len(rows) >= 4
     assert len({row["id"] for row in rows}) == len(rows)
+
+
+def test_malformed_policy_terms_cannot_be_scored_as_character_checks(tmp_path):
+    row = dict(load_dataset()[0], required_terms="30 days")
+    path = tmp_path / "invalid.json"
+    path.write_text(json.dumps([row]))
+    with pytest.raises(ValueError, match="required_terms"):
+        load_dataset(path)
+
+
+def test_empty_reference_is_rejected_before_evaluation(tmp_path):
+    row = dict(load_dataset()[0], reference_context=" ")
+    path = tmp_path / "invalid.json"
+    path.write_text(json.dumps([row]))
+    with pytest.raises(ValueError, match="reference_context"):
+        load_dataset(path)
 
 
 def test_expected_answers_clear_deterministic_gate():
