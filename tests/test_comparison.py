@@ -1,6 +1,7 @@
 from promptpulse.comparison import compare_runs
 from promptpulse.data import load_dataset
 import pytest
+from types import SimpleNamespace
 
 
 def _answers():
@@ -38,3 +39,13 @@ def test_invalid_tolerance_cannot_turn_regression_into_pass(tolerance):
     rows, answers = _answers()
     with pytest.raises(ValueError, match="finite non-negative"):
         compare_runs(rows, answers, answers, mean_tolerance=tolerance)
+
+
+def test_decision_uses_unrounded_means_at_tolerance_boundary(monkeypatch):
+    scores = iter((0.9004, 0.8996))
+    monkeypatch.setattr("promptpulse.comparison.evaluate_response", lambda **kwargs: SimpleNamespace(pulse_score=next(scores), passed=True))
+    row = {"id": "precision", "user_query": "query", "reference_context": "context"}
+    report = compare_runs([row], {"precision": "baseline"}, {"precision": "candidate"}, mean_tolerance=0.0005)
+    assert report.decision == "INVESTIGATE"
+    assert report.baseline_mean == 0.9
+    assert report.candidate_mean == 0.9

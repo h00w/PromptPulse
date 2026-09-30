@@ -66,11 +66,11 @@ def compare_runs(
         if not results[1].passed:
             failures.append(case_id)
 
-    base_mean = round(sum(baseline_scores) / len(aligned), 3) if aligned else 0.0
-    cand_mean = round(sum(candidate_scores) / len(aligned), 3) if aligned else 0.0
+    base_mean = sum(baseline_scores) / len(aligned) if aligned else 0.0
+    cand_mean = sum(candidate_scores) / len(aligned) if aligned else 0.0
     decision = "HOLD" if missing or unexpected or failures else (
         "INVESTIGATE" if cand_mean < base_mean - mean_tolerance else "PASS"
     )
     return ComparisonReport(
-        decision, base_mean, cand_mean, tuple(regressions), tuple(failures), missing, unexpected
+        decision, round(base_mean, 3), round(cand_mean, 3), tuple(regressions), tuple(failures), missing, unexpected
     )
