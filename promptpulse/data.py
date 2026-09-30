@@ -25,10 +25,17 @@ def load_dataset(path: str | Path = DEFAULT_DATASET) -> list[dict[str, Any]]:
         missing = required - row.keys()
         if missing:
             raise ValueError(f"Dataset row {index} is missing: {sorted(missing)}")
+        for field in required:
+            if not isinstance(row[field], str) or not row[field].strip():
+                raise ValueError(f"Dataset row {index} requires a non-empty string for {field}.")
         if row["id"] in seen:
             raise ValueError(f"Duplicate dataset id: {row['id']}")
         seen.add(row["id"])
         row.setdefault("required_terms", [])
         row.setdefault("forbidden_terms", [])
+        for field in ("required_terms", "forbidden_terms"):
+            terms = row[field]
+            if not isinstance(terms, list) or any(not isinstance(term, str) or not term.strip() for term in terms):
+                raise ValueError(f"Dataset row {index} requires a list of non-empty strings for {field}.")
 
     return data
