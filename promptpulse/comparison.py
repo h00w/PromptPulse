@@ -30,8 +30,18 @@ def compare_runs(
     *,
     mean_tolerance: float = 0.02,
 ) -> ComparisonReport:
-    if not dataset or not isinstance(mean_tolerance, (int, float)) or not isfinite(mean_tolerance) or mean_tolerance < 0:
+    if not dataset or isinstance(mean_tolerance, bool) or not isinstance(mean_tolerance, (int, float)) or not isfinite(mean_tolerance) or mean_tolerance < 0:
         raise ValueError("A non-empty dataset and finite non-negative tolerance are required.")
+    for row in dataset:
+        if not isinstance(row, dict) or any(
+            not isinstance(row.get(field), str) or not row[field].strip()
+            for field in ("id", "user_query", "reference_context")
+        ):
+            raise ValueError("Dataset cases require non-empty ID, query and reference context.")
+        for field in ("required_terms", "forbidden_terms"):
+            terms = row.get(field, [])
+            if not isinstance(terms, list) or any(not isinstance(term, str) or not term.strip() for term in terms):
+                raise ValueError(f"Dataset {field} must be a list of non-empty strings.")
     cases = {row["id"]: row for row in dataset}
     if len(cases) != len(dataset):
         raise ValueError("Dataset case IDs must be unique.")

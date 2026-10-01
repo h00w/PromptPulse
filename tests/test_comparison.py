@@ -34,7 +34,7 @@ def test_policy_regression_holds_despite_other_good_cases():
     assert "refund-policy" in report.regressed_cases
 
 
-@pytest.mark.parametrize("tolerance", [float("nan"), float("inf"), -0.01])
+@pytest.mark.parametrize("tolerance", [float("nan"), float("inf"), -0.01, True])
 def test_invalid_tolerance_cannot_turn_regression_into_pass(tolerance):
     rows, answers = _answers()
     with pytest.raises(ValueError, match="finite non-negative"):
@@ -49,3 +49,13 @@ def test_decision_uses_unrounded_means_at_tolerance_boundary(monkeypatch):
     assert report.decision == "INVESTIGATE"
     assert report.baseline_mean == 0.9
     assert report.candidate_mean == 0.9
+
+
+@pytest.mark.parametrize("overrides", [
+    {"id": " "}, {"user_query": ""}, {"reference_context": None},
+    {"required_terms": "refund"}, {"forbidden_terms": [""]},
+])
+def test_direct_comparison_rejects_malformed_case_evidence(overrides):
+    row = {"id": "case", "user_query": "query", "reference_context": "context", **overrides}
+    with pytest.raises(ValueError, match="Dataset"):
+        compare_runs([row], {"case": "answer"}, {"case": "answer"})
