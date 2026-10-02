@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import asdict, dataclass
+from math import isfinite
 from typing import Iterable
 
 from .config import PULSE_PASS_THRESHOLD
@@ -101,6 +102,9 @@ def evaluate_response(
     forbidden_terms: Iterable[str] = (),
     pass_threshold: float = PULSE_PASS_THRESHOLD,
 ) -> EvaluationResult:
+    if (isinstance(pass_threshold, bool) or not isinstance(pass_threshold, (int, float))
+            or not isfinite(pass_threshold) or not 0 <= pass_threshold <= 1):
+        raise ValueError("pass_threshold must be a finite number within [0, 1]")
     relevance = query_relevance(user_query, response)
     ground = groundedness(reference_context, response)
     coverage = reference_coverage(reference_context, response)
