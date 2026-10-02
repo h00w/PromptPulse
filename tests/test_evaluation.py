@@ -71,3 +71,13 @@ def test_policy_terms_do_not_match_inside_other_words_or_numbers():
     score, failures = policy_compliance("Refund in 30 days; policy is safe.", required_terms=["30 days"], forbidden_terms=["safe"])
     assert score == 0.5
     assert failures == ["Forbidden term present: safe"]
+
+
+@pytest.mark.parametrize("threshold", [float("nan"), float("inf"), float("-inf"), -0.1, 1.1, True, False, "0.7", None])
+def test_invalid_evaluation_threshold_cannot_change_release_decision(threshold):
+    row = load_dataset()[0]
+    with pytest.raises(ValueError, match="pass_threshold"):
+        evaluate_response(
+            user_query=row["user_query"], reference_context=row["reference_context"],
+            response=row["expected_answer"], pass_threshold=threshold,
+        )
