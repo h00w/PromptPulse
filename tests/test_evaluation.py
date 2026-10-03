@@ -64,6 +64,23 @@ def test_empty_answer_fails():
     assert result.pulse_score < 0.70
 
 
+@pytest.mark.parametrize("field", ["required_terms", "forbidden_terms"])
+@pytest.mark.parametrize("terms", ["30 days", b"safe", [""], ["  "], [None], [1], None, 1])
+def test_direct_policy_checks_reject_malformed_terms(field, terms):
+    with pytest.raises(ValueError, match=field):
+        policy_compliance("Refunds are available for 30 days.", **{field: terms})
+
+
+def test_policy_checks_accept_term_generators_without_losing_checks():
+    score, failures = policy_compliance(
+        "Refunds are available for 30 days.",
+        required_terms=(term for term in ["30 days"]),
+        forbidden_terms=(term for term in ["60 days"]),
+    )
+    assert score == 1.0
+    assert failures == []
+
+
 def test_policy_terms_do_not_match_inside_other_words_or_numbers():
     score, failures = policy_compliance("Refund in 130 days; policy is unsafe.", required_terms=["30 days"], forbidden_terms=["safe"])
     assert score == 0.5

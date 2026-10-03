@@ -56,8 +56,19 @@ def policy_compliance(
         # A policy phrase must not match inside another word or number.
         return bool(re.search(r"(?<!\w)" + re.escape(term.casefold()) + r"(?!\w)", normalized))
     failures: list[str] = []
-    required = list(required_terms)
-    forbidden = list(forbidden_terms)
+    def terms(value: Iterable[str], name: str) -> list[str]:
+        if isinstance(value, (str, bytes)):
+            raise ValueError(f"{name} must be an iterable of non-empty strings")
+        try:
+            result = list(value)
+        except TypeError as exc:
+            raise ValueError(f"{name} must be an iterable of non-empty strings") from exc
+        if any(not isinstance(term, str) or not term.strip() for term in result):
+            raise ValueError(f"{name} must contain non-empty strings")
+        return result
+
+    required = terms(required_terms, "required_terms")
+    forbidden = terms(forbidden_terms, "forbidden_terms")
     checks = 0
     passed = 0
 
