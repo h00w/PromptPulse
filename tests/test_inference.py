@@ -30,6 +30,24 @@ class _FakeInferenceClient:
         self.chat = SimpleNamespace(completions=_FakeCompletions(self.calls))
 
 
+def test_stream_ignores_usage_and_empty_delta_chunks(monkeypatch):
+    chunks = [
+        SimpleNamespace(choices=[]),
+        SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content=None))]),
+        SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content="Grounded "))]),
+        SimpleNamespace(choices=[]),
+        SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content="answer"))]),
+    ]
+
+    class StreamClient:
+        def __init__(self, **kwargs):
+            self.chat = SimpleNamespace(completions=SimpleNamespace(create=lambda **kw: iter(chunks)))
+
+    monkeypatch.setattr(inference, "InferenceClient", StreamClient)
+    monkeypatch.setattr(inference, "get_hf_token", lambda: "test-token")
+    assert "".join(inference.stream_response("Question", "Context", inference.GenerationConfig())) == "Grounded answer"
+
+
 def test_unsupported_preferred_model_uses_fallback(monkeypatch):
     _FakeInferenceClient.calls = []
     monkeypatch.setattr(inference, "InferenceClient", _FakeInferenceClient)
