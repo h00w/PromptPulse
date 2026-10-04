@@ -156,6 +156,9 @@ def stream_response(
         stream=True,
     )
     for chunk in stream:
+        # Providers can emit usage-only chunks with no completion choices.
+        if not chunk.choices:
+            continue
         delta = chunk.choices[0].delta.content
         if delta:
             yield delta
