@@ -64,6 +64,15 @@ def test_empty_answer_fails():
     assert result.pulse_score < 0.70
 
 
+@pytest.mark.parametrize("answer", ["", "  ", "\n\t"])
+@pytest.mark.parametrize("threshold", [0, 0.2, 0.7])
+def test_empty_answers_cannot_pass_a_relaxed_threshold(answer, threshold):
+    result = evaluate_response(user_query="Refund policy?", reference_context="Refunds within 30 days.",
+                               response=answer, pass_threshold=threshold)
+    assert result.passed is False
+    assert any("empty" in reason.lower() for reason in result.reasons)
+
+
 @pytest.mark.parametrize("field", ["required_terms", "forbidden_terms"])
 @pytest.mark.parametrize("terms", ["30 days", b"safe", [""], ["  "], [None], [1], None, 1])
 def test_direct_policy_checks_reject_malformed_terms(field, terms):

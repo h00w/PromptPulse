@@ -133,6 +133,8 @@ def evaluate_response(
     )
 
     reasons = list(failures)
+    if not response.strip():
+        reasons.append("Response is empty; no answer evidence was produced.")
     if relevance < 0.45:
         reasons.append("Low lexical relevance to the user question; review semantic judge results if enabled.")
     if ground < 0.55:
@@ -148,6 +150,6 @@ def evaluate_response(
         reference_coverage=coverage,
         policy_compliance=policy,
         pulse_score=pulse,
-        passed=pulse >= pass_threshold and policy >= 0.999,
+        passed=bool(response.strip()) and pulse >= pass_threshold and policy >= 0.999,
         reasons=reasons,
     )
