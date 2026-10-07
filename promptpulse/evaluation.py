@@ -113,6 +113,13 @@ def evaluate_response(
     forbidden_terms: Iterable[str] = (),
     pass_threshold: float = PULSE_PASS_THRESHOLD,
 ) -> EvaluationResult:
+    for name, value in (("user_query", user_query), ("reference_context", reference_context), ("response", response)):
+        if not isinstance(value, str):
+            raise ValueError(f"{name} must be a string")
+    if not user_query.strip():
+        raise ValueError("user_query must be a non-empty string")
+    if not reference_context.strip():
+        raise ValueError("reference_context must be a non-empty string")
     if (isinstance(pass_threshold, bool) or not isinstance(pass_threshold, (int, float))
             or not isfinite(pass_threshold) or not 0 <= pass_threshold <= 1):
         raise ValueError("pass_threshold must be a finite number within [0, 1]")
