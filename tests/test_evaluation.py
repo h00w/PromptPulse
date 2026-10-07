@@ -73,6 +73,21 @@ def test_empty_answers_cannot_pass_a_relaxed_threshold(answer, threshold):
     assert any("empty" in reason.lower() for reason in result.reasons)
 
 
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("user_query", None), ("user_query", " "), ("user_query", 1),
+        ("reference_context", None), ("reference_context", "\n"),
+        ("response", None), ("response", []),
+    ],
+)
+def test_direct_evaluation_rejects_malformed_text_evidence(field, value):
+    payload = {"user_query": "Refund policy?", "reference_context": "Refunds within 30 days.", "response": "Thirty days."}
+    payload[field] = value
+    with pytest.raises(ValueError, match=field):
+        evaluate_response(**payload)
+
+
 @pytest.mark.parametrize("field", ["required_terms", "forbidden_terms"])
 @pytest.mark.parametrize("terms", ["30 days", b"safe", [""], ["  "], [None], [1], None, 1])
 def test_direct_policy_checks_reject_malformed_terms(field, terms):
