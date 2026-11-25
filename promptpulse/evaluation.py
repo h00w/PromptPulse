@@ -157,6 +157,6 @@ def evaluate_response(
         reference_coverage=coverage,
         policy_compliance=policy,
         pulse_score=pulse,
-        passed=bool(response.strip()) and pulse >= pass_threshold and policy >= 0.999,
+        passed=bool(response.strip()) and pulse >= pass_threshold and not failures,
         reasons=reasons,
     )

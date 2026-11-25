@@ -122,3 +122,14 @@ def test_invalid_evaluation_threshold_cannot_change_release_decision(threshold):
             user_query=row["user_query"], reference_context=row["reference_context"],
             response=row["expected_answer"], pass_threshold=threshold,
         )
+
+
+def test_one_forbidden_term_still_blocks_a_high_scoring_policy():
+    forbidden = [f"absent{i}" for i in range(2100)] + ["blocked"]
+    result = evaluate_response(
+        user_query="blocked", reference_context="blocked", response="blocked",
+        forbidden_terms=forbidden, pass_threshold=0,
+    )
+    assert result.policy_compliance == 1.0  # rounded for display
+    assert "Forbidden term present: blocked" in result.reasons
+    assert result.passed is False
