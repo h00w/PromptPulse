@@ -1,3 +1,5 @@
 -r requirements.txt
 pytest==8.4.2
 deepeval==3.9.9
+# DeepEval 3.9.9 uses the Sentry 2.x profiling API.
+sentry-sdk>=2.71.0,<3
